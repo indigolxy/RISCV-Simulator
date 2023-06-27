@@ -1,0 +1,1 @@
+/usr/bin/c++ -g CMakeFiles/code.dir/src/main/main.cpp.o CMakeFiles/code.dir/src/units/instruction.cpp.o CMakeFiles/code.dir/src/main/cpu.cpp.o -o code 
