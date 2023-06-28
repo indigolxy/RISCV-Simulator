@@ -5,4 +5,5 @@ set(CMAKE_CXX_STANDARD 14)
 
 add_executable(code src/main/main.cpp
         src/units/instruction.cpp
-        src/main/cpu.cpp)
+        src/main/cpu.cpp
+        src/units/rss.cpp)

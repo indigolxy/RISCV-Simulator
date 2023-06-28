@@ -2,7 +2,7 @@
 #ifndef RISCV_SIMULATOR_CPU_H
 #define RISCV_SIMULATOR_CPU_H
 
-#include "../units/RoB.h"
+#include "../units/rob.h"
 #include "../storage/memory.h"
 #include "../units/rss.h"
 
@@ -11,10 +11,10 @@ public:
   CPU() = default;
 
   void Init() {
-    pc = memory.InitInstructions();
+    pc = mem.InitInstructions();
   }
 
-  int run();
+  u8 run();
 
 private:
   class ArithmeticLogicUnit alu;
@@ -22,16 +22,27 @@ private:
   class InstructionUnit iu;
   class Register reg;
   class LoadStoreBuffer lsb;
-  class Memory memory;
+  class Memory mem;
   class ReservationStation ls_rss, ari_rss;
-  class Predictor;
+  class Predictor predictor;
   class CommonDataBus ready_bus, commit_bus;
   int pc = 0;
+  bool pc_start = true;
   int clk = 0;
+
+  void ClearPipeline();
 
   void ExecuteRss();
 
   void TryIssue();
+
+  void AccessMem();
+
+  std::pair<u8, bool> TryCommit();
+
+  void CheckBus();
+
+  void Flush();
 
 };
 

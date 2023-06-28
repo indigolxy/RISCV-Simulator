@@ -61,6 +61,14 @@ public:
     return (tail + 1) % size == head;
   }
 
+  bool empty() {
+    return tail == head;
+  }
+
+  void clear() {
+    head = tail = 0;
+  }
+
   // push at back
   int push(const T &obj) {
     data[tail] = obj;

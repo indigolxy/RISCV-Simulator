@@ -292,7 +292,7 @@ InstructionUnit::Instruction InstructionUnit::DecodeSet(u32 instruction, Instruc
       break;
     }
   }
-  current_instruction = ret;
-  current_instruction_code = instruction;
+  current_ins = ret;
+  current_code = instruction;
   return ret;
 }

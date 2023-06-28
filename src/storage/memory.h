@@ -39,6 +39,46 @@ public:
     return src;
   }
 
+  static int GetHighHalf(int src) {
+    src = src & 0xffff0000;
+    src = src >> 16;
+    return src;
+  }
+
+  static int GetMidHalf(int src) {
+    src = src & 0xffff00;
+    src = src >> 8;
+    return src;
+  }
+
+  void StoreByte(int addr, int value) {
+    units[addr] = u8(value);
+  }
+
+  void StoreHalf(int addr, int value) {
+    units[addr] = u8(GetHighByte(value));
+    units[addr + 1] = u8(GetByte(value));
+  }
+
+  void StoreWord(int addr, int value) {
+    units[addr] = u8(GetHighByte(GetHighHalf(value)));
+    units[addr + 1] = u8(GetByte(GetHighHalf(value)));
+    units[addr + 2] = u8(GetHighByte(value));
+    units[addr + 3] = u8(GetByte(value));
+  }
+
+  u32 LoadByte(int addr) const {
+    return u32(units[addr]);
+  }
+
+  u32 LoadHalf(int addr) const {
+    return u32((units[addr] << 8) | units[addr + 1]);
+  }
+
+  u32 LoadWord(int addr) const {
+    return (LoadHalf(addr) << 16) | LoadHalf(addr + 2);
+  }
+
   /*
    * read instructions and put into memory
    * return PC value

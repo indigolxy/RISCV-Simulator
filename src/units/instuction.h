@@ -3,6 +3,7 @@
 #define RISCV_SIMULATOR_INSTUCTION_H
 
 #include "../utils/config.h"
+#include "predictor.h"
 
 enum class InstructionType {
   R, // 0110011
@@ -48,17 +49,25 @@ public:
    * calculate next pc according to current_instruction, pc and predictor
    * B-type:jump, J-type:predictor, else pc += 4;
    */
-  int NextPc(predictor, pc) {
-    if (current_instruction.type != J) pc += 4;
-    else {
-    // todo 还有非条件跳转B
-      pc = instruction_unit.NextPc(current_instruction, predictor.Jump(current_instruction_code));
+  int NextPc(Predictor &predictor, int pc) {
+    if (current_ins.type != InstructionType::B && current_ins.type != InstructionType::J && current_ins.opt != OptType::JALR) {
+      return pc + 4;
+    }
+    else if (current_ins.type == InstructionType::J) {
+      return pc + current_ins.imm;
+    }
+    else if (current_ins.type == InstructionType::B) {
+      if (predictor.BJump(current_code)) return pc + current_ins.imm;
+      return pc + 4;
+    }
+    else if (current_ins.opt == OptType::JALR) {
+      return predictor.JALRJump();
     }
   }
 
 private:
-  Instruction current_instruction;
-  u32 current_instruction_code;
+  Instruction current_ins;
+  u32 current_code;
 
   static u8 GetOpt(u32 instruction);
   static int GetRd(u32 instruction);
