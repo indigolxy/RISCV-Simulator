@@ -1,3 +1,0 @@
-/mnt/d/PPCA/riscv/RISCV-Simulator/cmake-build-debug/CMakeFiles/code.dir
-/mnt/d/PPCA/riscv/RISCV-Simulator/cmake-build-debug/CMakeFiles/edit_cache.dir
-/mnt/d/PPCA/riscv/RISCV-Simulator/cmake-build-debug/CMakeFiles/rebuild_cache.dir
