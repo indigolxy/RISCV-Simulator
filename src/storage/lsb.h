@@ -15,10 +15,35 @@ private:
     int addr = 0;
     int value = 0;
     int label = 0;
+
+    friend std::ostream &operator<<(std::ostream &os, const LoadStoreBuffer::LsbEntry &obj) {
+      os << "label = " << obj.label << ", opt = ";
+      switch (obj.opt) {
+        case OptType::LB : os << "LB"; break;
+        case OptType::LH : os << "LH"; break;
+        case OptType::LW : os << "LW"; break;
+        case OptType::LBU : os << "LBU"; break;
+        case OptType::LHU : os << "LHU"; break;
+        case OptType::SB : os << "SB"; break;
+        case OptType::SH : os << "SH"; break;
+        case OptType::SW : os << "SW"; break;
+      }
+      os << ", addr = " << obj.addr << ", value = " << obj.value;
+      if (obj.ready) os << ", is ready.";
+      else os << ", is not ready.";
+    }
   };
 
 public:
   LoadStoreBuffer() = default;
+
+  void print() {
+    std::cout << "count = " << count << std::endl;
+    std::cout << "----------------LSB_NOW--------------------" << std::endl;
+    lsb_now.print();
+    std::cout << "----------------LSB_NEXT--------------------" << std::endl;
+    lsb_next.print();
+  }
 
   void flush() {
     lsb_now = lsb_next;
@@ -67,7 +92,7 @@ public:
 
   /*
    * receive call from ls_rss(drop a LD/ST instruction)
-   *       if ST: add to the queue
+   *       if ST: add to the queue, and put information on bus(so that rob can set ready)
    *       if LD: percolate lsb(from back to front)
    *              if there's a ST with same addr(overlap), put information on bus
    *              else add to queue
@@ -75,65 +100,68 @@ public:
   void Execute(OptType opt, int addr, int value, int label, CommonDataBus &cdb) {
     if (opt == OptType::SB || opt == OptType::SH || opt == OptType::SW) {
       lsb_next.push({false, opt, addr, value, label}); // ST: not ready
+      cdb.PutOnBus(label, value);
       return;
     }
 
     // percolate lsb, find ST with overlapped units
-    CircularQueue<LsbEntry, LSBSIZE>::iterator iter = lsb_now.back();
-    while (true) {
-      if (iter->opt == OptType::SB) {
-        int tmp = Memory::GetByte(iter->value);
-        if ((opt == OptType::LB || opt == OptType::LBU) && iter->addr == addr) {
-          cdb.PutOnBus(label, (opt == OptType::LB) ? Memory::SignExtend(tmp, 8) : tmp);
-          return;
-        }
-      }
-
-      if (iter->opt == OptType::SH) {
-        int tmp = Memory::GetHalf(iter->value);
-        if (opt == OptType::LB || opt == OptType::LBU) {
-          if (addr == iter->addr) {
-            tmp = Memory::GetHighByte(tmp);
+    if (!lsb_now.empty()) {
+      CircularQueue<LsbEntry, LSBSIZE>::iterator iter = lsb_now.back();
+      while (true) {
+        if (iter->opt == OptType::SB) {
+          int tmp = Memory::GetByte(iter->value);
+          if ((opt == OptType::LB || opt == OptType::LBU) && iter->addr == addr) {
             cdb.PutOnBus(label, (opt == OptType::LB) ? Memory::SignExtend(tmp, 8) : tmp);
             return;
           }
-          if (addr == iter->addr + 1) {
-            tmp = Memory::GetByte(tmp);
-            cdb.PutOnBus(label, (opt == OptType::LBU) ? Memory::SignExtend(tmp, 8) : tmp);
+        }
+
+        if (iter->opt == OptType::SH) {
+          int tmp = Memory::GetHalf(iter->value);
+          if (opt == OptType::LB || opt == OptType::LBU) {
+            if (addr == iter->addr) {
+              tmp = Memory::GetHighByte(tmp);
+              cdb.PutOnBus(label, (opt == OptType::LB) ? Memory::SignExtend(tmp, 8) : tmp);
+              return;
+            }
+            if (addr == iter->addr + 1) {
+              tmp = Memory::GetByte(tmp);
+              cdb.PutOnBus(label, (opt == OptType::LBU) ? Memory::SignExtend(tmp, 8) : tmp);
+              return;
+            }
+          }
+          if ((opt == OptType::LH || opt == OptType::LHU) && addr == iter->addr) {
+            cdb.PutOnBus(label, (opt == OptType::LH) ? Memory::SignExtend(tmp, 16) : tmp);
             return;
           }
         }
-        if ((opt == OptType::LH || opt == OptType::LHU) && addr == iter->addr) {
-          cdb.PutOnBus(label, (opt == OptType::LH) ? Memory::SignExtend(tmp, 16) : tmp);
-          return;
-        }
-      }
 
-      if (iter->opt == OptType::SW) {
-        int tmp = iter->value;
-        if ((opt == OptType::LB || opt == OptType::LBU) && (addr >= iter->addr && addr <= iter->addr + 3)) {
-          if (addr == iter->addr) tmp = Memory::GetHighByte(Memory::GetHighHalf(tmp));
-          else if (addr == iter->addr + 1) tmp = Memory::GetByte(Memory::GetHighHalf(tmp));
-          else if (addr == iter->addr + 2) tmp = tmp = Memory::GetHighByte(Memory::GetHalf(tmp));
-          else tmp = Memory::GetByte(tmp);
-          cdb.PutOnBus(label, (opt == OptType::LB) ? Memory::SignExtend(tmp, 8) : tmp);
-          return;
+        if (iter->opt == OptType::SW) {
+          int tmp = iter->value;
+          if ((opt == OptType::LB || opt == OptType::LBU) && (addr >= iter->addr && addr <= iter->addr + 3)) {
+            if (addr == iter->addr) tmp = Memory::GetHighByte(Memory::GetHighHalf(tmp));
+            else if (addr == iter->addr + 1) tmp = Memory::GetByte(Memory::GetHighHalf(tmp));
+            else if (addr == iter->addr + 2) tmp = tmp = Memory::GetHighByte(Memory::GetHalf(tmp));
+            else tmp = Memory::GetByte(tmp);
+            cdb.PutOnBus(label, (opt == OptType::LB) ? Memory::SignExtend(tmp, 8) : tmp);
+            return;
+          }
+          if ((opt == OptType::LH || opt == OptType::LHU) && (addr >= iter->addr && addr <= iter->addr + 2)) {
+            if (addr == iter->addr) tmp = Memory::GetHighHalf(tmp);
+            else if (addr == iter->addr + 1) tmp = Memory::GetMidHalf(tmp);
+            else tmp = Memory::GetHalf(tmp);
+            cdb.PutOnBus(label, (opt == OptType::LH) ? Memory::SignExtend(tmp, 16) : tmp);
+            return;
+          }
+          if (opt == OptType::LW && addr == iter->addr) {
+            cdb.PutOnBus(label, tmp);
+            return;
+          }
         }
-        if ((opt == OptType::LH || opt == OptType::LHU) && (addr >= iter->addr && addr <= iter->addr + 2)) {
-          if (addr == iter->addr) tmp = Memory::GetHighHalf(tmp);
-          else if (addr == iter->addr + 1) tmp = Memory::GetMidHalf(tmp);
-          else tmp = Memory::GetHalf(tmp);
-          cdb.PutOnBus(label, (opt == OptType::LH) ? Memory::SignExtend(tmp, 16) : tmp);
-          return;
-        }
-        if (opt == OptType::LW && addr == iter->addr) {
-          cdb.PutOnBus(label, tmp);
-          return;
-        }
-      }
 
-      if (iter == lsb_now.front()) break;
-      --iter;
+        if (iter == lsb_now.front()) break;
+        --iter;
+      }
     }
 
     lsb_next.push({true, opt, addr, value, label}); // LD: ready

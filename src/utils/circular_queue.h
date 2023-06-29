@@ -2,6 +2,8 @@
 #ifndef RISCV_SIMULATOR_CIRCULAR_QUEUE_H
 #define RISCV_SIMULATOR_CIRCULAR_QUEUE_H
 
+#include <iostream>
+
 template <typename T, int size>
 class CircularQueue {
 public:
@@ -20,7 +22,7 @@ public:
       return *this;
     }
     iterator &operator--() {
-      index = (index - 1) % size;
+      index = (index - 1 + size) % size;
       return *this;
     }
     bool operator==(const iterator &other) {
@@ -78,7 +80,7 @@ public:
 
   // pop at front
   void pop() {
-    tail = (tail - 1 + size) % size;
+    head = (head + 1) % size;
   }
 
   iterator back() {
@@ -95,6 +97,12 @@ public:
 
   iterator find(int index) {
     return {index % size, this};
+  }
+
+  void print() {
+    for (int i = head; i != tail; i = (i + 1) % size) {
+      std::cout << data[i] << std::endl;
+    }
   }
 
 private:

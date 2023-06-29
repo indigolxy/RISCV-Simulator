@@ -10,10 +10,12 @@ class Register {
 public:
   Register() = default;
 
-  void flush() {
+  void FlushSetX0() {
     for (int i = 0; i < REGNUM; ++i) {
       reg_now[i] = reg_next[i];
     }
+    reg_now[0].data = 0;
+    reg_now[0].dependency = -1;
   }
 
   std::pair<int, int> GetValueDependency(int num) const {

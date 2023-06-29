@@ -10,13 +10,60 @@
 class ReorderBuffer {
 private:
   struct RoBEntry {
-    int pc;
-    int label;
+    int pc = -1;
+    int label = -1;
     OptType opt;
     bool ready = false;
     int rd = -1; // opt == ADDI && rd == -1 represents END
                  // opt ==
     int value = 0;
+
+    friend std::ostream &operator<<(std::ostream &os, const ReorderBuffer::RoBEntry &obj) {
+      os << "label = " << std::dec << obj.label << ", pc = " << std::hex << obj.pc << std::dec << ", opt = ";
+      switch (obj.opt) {
+        case OptType::LUI : os << "LUI"; break;
+        case OptType::AUIPC : os << "AUIPC"; break;
+        case OptType::JAL : os << "JAL"; break;
+        case OptType::JALR : os << "JALR"; break;
+        case OptType::BEQ : os << "BEQ"; break;
+        case OptType::BNE : os << "BNE"; break;
+        case OptType::BLT : os << "BLT"; break;
+        case OptType::BGE : os << "BGE"; break;
+        case OptType::BLTU : os << "BLTU"; break;
+        case OptType::BGEU : os << "BGEU"; break;
+        case OptType::LB : os << "LB"; break;
+        case OptType::LH : os << "LH"; break;
+        case OptType::LW : os << "LW"; break;
+        case OptType::LBU : os << "LBU"; break;
+        case OptType::LHU : os << "LHU"; break;
+        case OptType::SB : os << "SB"; break;
+        case OptType::SH : os << "SH"; break;
+        case OptType::SW : os << "SW"; break;
+        case OptType::ADDI : os << "ADDI"; break;
+        case OptType::SLTI : os << "SLTI"; break;
+        case OptType::SLTIU : os << "SLTIU"; break;
+        case OptType::XORI : os << "XORI"; break;
+        case OptType::ORI : os << "ORI"; break;
+        case OptType::ANDI : os << "ANDI"; break;
+        case OptType::SLLI : os << "SLLI"; break;
+        case OptType::SRLI : os << "SRLI"; break;
+        case OptType::SRAI : os << "SRAI"; break;
+        case OptType::ADD : os << "ADD"; break;
+        case OptType::SUB : os << "SUB"; break;
+        case OptType::SLL : os << "SLL"; break;
+        case OptType::SLT : os << "SLT"; break;
+        case OptType::SLTU : os << "SLTU"; break;
+        case OptType::XOR : os << "XOR"; break;
+        case OptType::SRL : os << "SRL"; break;
+        case OptType::SRA : os << "SRA"; break;
+        case OptType::OR : os << "OR"; break;
+        case OptType::AND : os << "AND"; break;
+      }
+      os << ", rd = " << obj.rd << ", value = " << obj.value;
+      if (obj.ready) os << ", is ready.";
+      else os << ", is not ready.";
+      return os;
+    }
   };
 
 public:
@@ -118,6 +165,13 @@ public:
       }
       ++iter;
     }
+  }
+
+  void Print() {
+    std::cout << "----------------ROB_NOW--------------------" << std::endl;
+    rob_now.print();
+    std::cout << "----------------ROB_NEXT--------------------" << std::endl;
+    rob_next.print();
   }
 
 private:

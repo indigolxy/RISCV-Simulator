@@ -17,6 +17,53 @@ private:
     int dependency1 = -1, dependency2 = -1;
     int label = 0; // in RoB
     int imm = 0;
+
+    friend std::ostream &operator<<(std::ostream &os, const ReservationStation::RssEntry &obj) {
+      os << "label = " << obj.label << ", opt = ";
+      switch (obj.opt) {
+        case OptType::LUI : os << "LUI"; break;
+        case OptType::AUIPC : os << "AUIPC"; break;
+        case OptType::JAL : os << "JAL"; break;
+        case OptType::JALR : os << "JALR"; break;
+        case OptType::BEQ : os << "BEQ"; break;
+        case OptType::BNE : os << "BNE"; break;
+        case OptType::BLT : os << "BLT"; break;
+        case OptType::BGE : os << "BGE"; break;
+        case OptType::BLTU : os << "BLTU"; break;
+        case OptType::BGEU : os << "BGEU"; break;
+        case OptType::LB : os << "LB"; break;
+        case OptType::LH : os << "LH"; break;
+        case OptType::LW : os << "LW"; break;
+        case OptType::LBU : os << "LBU"; break;
+        case OptType::LHU : os << "LHU"; break;
+        case OptType::SB : os << "SB"; break;
+        case OptType::SH : os << "SH"; break;
+        case OptType::SW : os << "SW"; break;
+        case OptType::ADDI : os << "ADDI"; break;
+        case OptType::SLTI : os << "SLTI"; break;
+        case OptType::SLTIU : os << "SLTIU"; break;
+        case OptType::XORI : os << "XORI"; break;
+        case OptType::ORI : os << "ORI"; break;
+        case OptType::ANDI : os << "ANDI"; break;
+        case OptType::SLLI : os << "SLLI"; break;
+        case OptType::SRLI : os << "SRLI"; break;
+        case OptType::SRAI : os << "SRAI"; break;
+        case OptType::ADD : os << "ADD"; break;
+        case OptType::SUB : os << "SUB"; break;
+        case OptType::SLL : os << "SLL"; break;
+        case OptType::SLT : os << "SLT"; break;
+        case OptType::SLTU : os << "SLTU"; break;
+        case OptType::XOR : os << "XOR"; break;
+        case OptType::SRL : os << "SRL"; break;
+        case OptType::SRA : os << "SRA"; break;
+        case OptType::OR : os << "OR"; break;
+        case OptType::AND : os << "AND"; break;
+      }
+      os << ", value1 = " << obj.value1 << ", dependency1 = " << obj.dependency1;
+      os << ", value2 = " << obj.value2 << ", dependency2 = " << obj.dependency2;
+      os << ", imm = " << obj.imm;
+      return os;
+    }
   };
 public:
   ReservationStation() = default;
@@ -57,14 +104,16 @@ public:
   /*
    * monitor bus and clear dependency(check dependency)
    */
-  void CheckBus(const CommonDataBus &cdb);
+  void CheckBus(const CommonDataBus &cdb1, const CommonDataBus &cdb2);
+
+  void print();
 
 private:
   // 从下标0开始放，到size - 1为止
   RssEntry rss_now[RSSSIZE];
-  int size_now;
+  int size_now = 0;
   RssEntry rss_next[RSSSIZE];
-  int size_next;
+  int size_next = 0;
 
   int FindIndependentEntry() {
     for (int i = 0; i < size_now; ++i) {

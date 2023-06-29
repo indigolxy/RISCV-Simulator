@@ -49,21 +49,7 @@ public:
    * calculate next pc according to current_instruction, pc and predictor
    * B-type:jump, J-type:predictor, else pc += 4;
    */
-  int NextPc(Predictor &predictor, int pc) {
-    if (current_ins.type != InstructionType::B && current_ins.type != InstructionType::J && current_ins.opt != OptType::JALR) {
-      return pc + 4;
-    }
-    else if (current_ins.type == InstructionType::J) {
-      return pc + current_ins.imm;
-    }
-    else if (current_ins.type == InstructionType::B) {
-      if (predictor.BJump(current_code)) return pc + current_ins.imm;
-      return pc + 4;
-    }
-    else if (current_ins.opt == OptType::JALR) {
-      return predictor.JALRJump();
-    }
-  }
+  int NextPc(Predictor &predictor, int pc);
 
 private:
   Instruction current_ins;

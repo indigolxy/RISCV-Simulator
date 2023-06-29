@@ -4,6 +4,6 @@
 int main () {
   CPU cpu;
   cpu.Init();
-  std::cout << cpu.run();
+  std::cout << int(cpu.run());
   return 0;
 }

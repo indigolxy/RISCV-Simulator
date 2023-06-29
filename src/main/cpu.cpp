@@ -2,23 +2,53 @@
 
 u8 CPU::run() {
   while (true) {
+//    std::cout << "--------------------------------------------------------" << std::endl;
+//    std::cout << "clk = " << std::dec << clk << ", pc = " << std::hex << pc << std::dec << std::endl;
+
     TryIssue();
+//    std::cout << "-----------------ROB_AFTER_ISSUE-------------------------" << std::endl;
+//    rob.Print();
+//    std::cout << "-----------------ARI_RSS_AFTER_ISSUE--------------------" << std::endl;
+//    ari_rss.print();
+//    std::cout << "-----------------LS_RSS_AFTER_ISSUE--------------------" << std::endl;
+//    ls_rss.print();
+
     ExecuteRss();
+//    std::cout << "-----------------ARI_RSS_AFTER_EXECUTE--------------------" << std::endl;
+//    ari_rss.print();
+//    std::cout << "-----------------LS_RSS_AFTER_EXECUTE--------------------" << std::endl;
+//    ls_rss.print();
+//    std::cout << "-----------------LSB_AFTER_EXECUTE--------------------" << std::endl;
+//    lsb.print();
+
     AccessMem();
+//    std::cout << "-----------------LSB_AFTER_ACCESS_MEM---------------------" << std::endl;
+//    lsb.print();
+
     std::pair<u8, bool> tmp = TryCommit();
     if (tmp.second) { // commit addi x0+255->x10(a0)时，输出并退出程序
       return tmp.first;
     }
+//    std::cout << "-----------------ROB_AFTER_COMMIT-------------------------" << std::endl;
+//    rob.Print();
+//    std::cout << "--------------READY_BUS------------" << std::endl;
+//    ready_bus.print();
+//    std::cout << "--------------COMMIT_BUS------------" << std::endl;
+//    commit_bus.print();
 
     CheckBus();
     Flush();
+
+//    std::cout << "-----------------ARI_RSS_END--------------------" << std::endl;
+//    ari_rss.print();
     ++clk;
+//    if (clk == 23) return -1;
   }
 }
 
 void CPU::Flush() {
   rob.flush();
-  reg.flush();
+  reg.FlushSetX0();
   lsb.flush();
   ls_rss.flush();
   ari_rss.flush();
@@ -28,14 +58,16 @@ void CPU::Flush() {
 
 /*
  * rob: check ready_bus(set ready and get value)
- * ls_rss, ari_rss: check ready_bus(clear dependency)
+ * ls_rss, ari_rss: check ready_bus and commit_bus (clear dependency)
  * reg: check commit_bus(write data in x[rd], if dependency is same, clear dependency)
  * lsb: check commit_bus(for unready STs: set ready)
+ *
+ * operate directly on the next state
  */
 void CPU::CheckBus() {
   rob.CheckBus(ready_bus);
-  ls_rss.CheckBus(ready_bus);
-  ari_rss.CheckBus(ready_bus);
+  ls_rss.CheckBus(ready_bus, commit_bus);
+  ari_rss.CheckBus(ready_bus, commit_bus);
   reg.CheckBus(commit_bus);
   lsb.CheckBus(commit_bus);
 }
@@ -138,7 +170,7 @@ void CPU::TryIssue() {
   // issue
   InstructionUnit::Instruction next_ins = iu.DecodeSet(next_code, next_type);
   int index = rob.issue(next_ins, reg, pc);
-  if (next_type == InstructionType::I || next_type == InstructionType::S) {
+  if ((next_ins.opt == OptType::LB || next_ins.opt == OptType::LH || next_ins.opt == OptType::LW || next_ins.opt == OptType::LBU || next_ins.opt == OptType::LHU) || next_type == InstructionType::S) {
     ls_rss.issue(index, next_ins, reg);
   }
   else {

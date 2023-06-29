@@ -170,17 +170,46 @@ void ReservationStation::LsExecute(const ArithmeticLogicUnit &alu, CommonDataBus
   }
 }
 
-void ReservationStation::CheckBus(const CommonDataBus &cdb) {
+void ReservationStation::CheckBus(const CommonDataBus &cdb1, const CommonDataBus &cdb2) {
+  for (int i = 0; i < size_next; ++i) {
+    if (rss_next[i].dependency1 >= 0) {
+      std::pair<bool, int> tmp = cdb1.TryGetValue(rss_next[i].dependency1);
+      if (tmp.first) {
+        rss_next[i].dependency1 = -1;
+        rss_next[i].value1 = tmp.second;
+      }
+      else { // can't find in ready_bus: try commit_bus
+        tmp = cdb2.TryGetValue(rss_next[i].dependency1);
+        if (tmp.first) {
+          rss_next[i].dependency1 = -1;
+          rss_next[i].value1 = tmp.second;
+        }
+      }
+    }
+    if (rss_next[i].dependency2 >= 0) {
+      std::pair<bool, int> tmp = cdb1.TryGetValue(rss_next[i].dependency2);
+      if (tmp.first) {
+        rss_next[i].dependency2 = -1;
+        rss_next[i].value2 = tmp.second;
+      }
+      else { // can't find in ready_bus: try commit_bus
+        tmp = cdb2.TryGetValue(rss_next[i].dependency2);
+        if (tmp.first) {
+          rss_next[i].dependency2 = -1;
+          rss_next[i].value2 = tmp.second;
+        }
+      }
+    }
+  }
+}
+
+void ReservationStation::print() {
+  std::cout << "---------------NOW-------------" << std::endl;
   for (int i = 0; i < size_now; ++i) {
-    std::pair<bool, int> tmp = cdb.TryGetValue(rss_now[i].dependency1);
-    if (tmp.first) {
-      rss_next[i].dependency1 = -1;
-      rss_next[i].value1 = tmp.second;
-    }
-    tmp = cdb.TryGetValue(rss_now[i].dependency2);
-    if (tmp.first) {
-      rss_next[i].dependency2 = -1;
-      rss_next[i].value2 = tmp.second;
-    }
+    std::cout << rss_now[i] << std::endl;
+  }
+  std::cout << "---------------NEXT-------------" << std::endl;
+  for (int i = 0; i < size_next; ++i) {
+    std::cout << rss_next[i] << std::endl;
   }
 }

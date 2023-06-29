@@ -296,3 +296,20 @@ InstructionUnit::Instruction InstructionUnit::DecodeSet(u32 instruction, Instruc
   current_code = instruction;
   return ret;
 }
+
+int InstructionUnit::NextPc(Predictor &predictor, int pc) {
+  if (current_ins.type != InstructionType::B && current_ins.type != InstructionType::J && current_ins.opt != OptType::JALR) {
+    return pc + 4;
+  }
+  else if (current_ins.type == InstructionType::J) {
+    predictor.AddJalAdd(pc + 4);
+    return pc + current_ins.imm;
+  }
+  else if (current_ins.type == InstructionType::B) {
+    if (predictor.BJump(current_code)) return pc + current_ins.imm;
+    return pc + 4;
+  }
+  else if (current_ins.opt == OptType::JALR) {
+    return predictor.JALRJump();
+  }
+}
