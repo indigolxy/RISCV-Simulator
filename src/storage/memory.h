@@ -56,15 +56,15 @@ public:
   }
 
   void StoreHalf(int addr, int value) {
-    units[addr] = u8(GetHighByte(value));
-    units[addr + 1] = u8(GetByte(value));
+    units[addr + 1] = u8(GetHighByte(value));
+    units[addr] = u8(GetByte(value));
   }
 
   void StoreWord(int addr, int value) {
-    units[addr] = u8(GetHighByte(GetHighHalf(value)));
-    units[addr + 1] = u8(GetByte(GetHighHalf(value)));
-    units[addr + 2] = u8(GetHighByte(value));
-    units[addr + 3] = u8(GetByte(value));
+    units[addr + 3] = u8(GetHighByte(GetHighHalf(value)));
+    units[addr + 2] = u8(GetByte(GetHighHalf(value)));
+    units[addr + 1] = u8(GetHighByte(value));
+    units[addr] = u8(GetByte(value));
   }
 
   u32 LoadByte(int addr) const {
@@ -72,11 +72,17 @@ public:
   }
 
   u32 LoadHalf(int addr) const {
-    return u32((units[addr] << 8) | units[addr + 1]);
+    u32 tmp1 = (u32)units[addr + 1] << 8;
+    u32 tmp2 = (u32)units[addr];
+    return tmp1 | tmp2;
   }
 
   u32 LoadWord(int addr) const {
-    return (LoadHalf(addr) << 16) | LoadHalf(addr + 2);
+    u32 tmp1 = (u32)units[addr + 3] << 24;
+    u32 tmp2 = (u32)units[addr + 2] << 16;
+    u32 tmp3 = (u32)units[addr + 1] << 8;
+    u32 tmp4 = (u32)units[addr];
+    return tmp1 | tmp2 | tmp3 | tmp4;
   }
 
   /*

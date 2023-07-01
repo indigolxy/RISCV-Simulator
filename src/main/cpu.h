@@ -28,6 +28,7 @@ private:
   class CommonDataBus ready_bus, commit_bus;
   int pc = 0;
   bool pc_start = true;
+  int jump_pc = -1;
   int clk = 0;
 
   void ClearPipeline();

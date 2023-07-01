@@ -68,7 +68,7 @@ public:
   }
 
   void clear() {
-    head = tail = 0;
+    head = tail;
   }
 
   // push at back
@@ -84,7 +84,7 @@ public:
   }
 
   iterator back() {
-    return {tail - 1, this};
+    return {(tail - 1 + size) % size, this};
   }
 
   iterator end() {

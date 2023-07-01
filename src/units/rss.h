@@ -59,8 +59,8 @@ private:
         case OptType::OR : os << "OR"; break;
         case OptType::AND : os << "AND"; break;
       }
-      os << ", value1 = " << obj.value1 << ", dependency1 = " << obj.dependency1;
-      os << ", value2 = " << obj.value2 << ", dependency2 = " << obj.dependency2;
+      os << std::hex << ", value1 = " << obj.value1 << std::dec << ", dependency1 = " << obj.dependency1;
+      os << std::hex <<  ", value2 = " << obj.value2 << std::dec << ", dependency2 = " << obj.dependency2;
       os << ", imm = " << obj.imm;
       return os;
     }
@@ -83,7 +83,7 @@ public:
    * read values and dependency in reg
    * add an entry
    */
-  void issue(int rob_index, const InstructionUnit::Instruction &ins, const Register &reg);
+  void issue(int rob_index, const InstructionUnit::Instruction &ins, const Register &reg, int pc);
 
   /*
    * find an entry without dependency and calculate in ALU and get result

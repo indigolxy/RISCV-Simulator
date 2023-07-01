@@ -1,11 +1,19 @@
 #include "rss.h"
 
-void ReservationStation::issue(int rob_index, const InstructionUnit::Instruction &ins, const Register &reg) {
+void ReservationStation::issue(int rob_index, const InstructionUnit::Instruction &ins, const Register &reg, int pc) {
   RssEntry tmp;
   tmp.label = rob_index;
   tmp.opt = ins.opt;
   if (ins.type != InstructionType::R) {
-    tmp.imm = ins.imm;
+    if (ins.opt == OptType::AUIPC) {
+      tmp.imm = ins.imm + pc;
+    }
+    else if (ins.opt == OptType::JAL) {
+      tmp.imm = pc + 4;
+    }
+    else {
+      tmp.imm = ins.imm;
+    }
   }
   if (ins.type != InstructionType::U) {
     std::pair<int, int> rs = reg.GetValueDependency(ins.rs1);
@@ -26,10 +34,7 @@ void ReservationStation::AriExecute(const ArithmeticLogicUnit &alu, CommonDataBu
   int value = 0;
   const RssEntry &tmp = rss_now[index];
   switch (tmp.opt) {
-    case OptType::JAL : {
-      value = 4;
-      break;
-    }
+    case OptType::JAL :
     case OptType::AUIPC :
     case OptType::LUI : {
       value = tmp.imm;
@@ -174,7 +179,7 @@ void ReservationStation::CheckBus(const CommonDataBus &cdb1, const CommonDataBus
   for (int i = 0; i < size_next; ++i) {
     if (rss_next[i].dependency1 >= 0) {
       std::pair<bool, int> tmp = cdb1.TryGetValue(rss_next[i].dependency1);
-      if (tmp.first) {
+      if (tmp.first && rss_next[i].opt != OptType::JALR) {
         rss_next[i].dependency1 = -1;
         rss_next[i].value1 = tmp.second;
       }
@@ -188,7 +193,7 @@ void ReservationStation::CheckBus(const CommonDataBus &cdb1, const CommonDataBus
     }
     if (rss_next[i].dependency2 >= 0) {
       std::pair<bool, int> tmp = cdb1.TryGetValue(rss_next[i].dependency2);
-      if (tmp.first) {
+      if (tmp.first && rss_next[i].opt != OptType::JALR) {
         rss_next[i].dependency2 = -1;
         rss_next[i].value2 = tmp.second;
       }
@@ -204,11 +209,11 @@ void ReservationStation::CheckBus(const CommonDataBus &cdb1, const CommonDataBus
 }
 
 void ReservationStation::print() {
-  std::cout << "---------------NOW-------------" << std::endl;
-  for (int i = 0; i < size_now; ++i) {
-    std::cout << rss_now[i] << std::endl;
-  }
-  std::cout << "---------------NEXT-------------" << std::endl;
+//  std::cout << "---------------NOW-------------" << std::endl;
+//  for (int i = 0; i < size_now; ++i) {
+//    std::cout << rss_now[i] << std::endl;
+//  }
+//  std::cout << "---------------NEXT-------------" << std::endl;
   for (int i = 0; i < size_next; ++i) {
     std::cout << rss_next[i] << std::endl;
   }

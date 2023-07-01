@@ -2,11 +2,11 @@
 
 u8 CPU::run() {
   while (true) {
-//    std::cout << "--------------------------------------------------------" << std::endl;
-//    std::cout << "clk = " << std::dec << clk << ", pc = " << std::hex << pc << std::dec << std::endl;
+//    std::cout << std::endl;
+//    std::cout << "clock cycle " << std::dec << clk << ": pc = " << std::hex << pc << std::dec << std::endl;
 
     TryIssue();
-//    std::cout << "-----------------ROB_AFTER_ISSUE-------------------------" << std::endl;
+//    std::cout << std::endl << "ROB_AFTER_ISSUE: " << std::endl;
 //    rob.Print();
 //    std::cout << "-----------------ARI_RSS_AFTER_ISSUE--------------------" << std::endl;
 //    ari_rss.print();
@@ -29,24 +29,27 @@ u8 CPU::run() {
     if (tmp.second) { // commit addi x0+255->x10(a0)时，输出并退出程序
       return tmp.first;
     }
-//    std::cout << "-----------------ROB_AFTER_COMMIT-------------------------" << std::endl;
+//    std::cout << std::endl << "ROB_AFTER_COMMIT: " << std::endl;
 //    rob.Print();
 //    std::cout << "--------------READY_BUS------------" << std::endl;
 //    ready_bus.print();
 //    std::cout << "--------------COMMIT_BUS------------" << std::endl;
 //    commit_bus.print();
+//    std::cout << "-----------------REGISTER--------------" << std::endl;
+//    reg.print();
 
     CheckBus();
     Flush();
 
 //    std::cout << "-----------------ARI_RSS_END--------------------" << std::endl;
 //    ari_rss.print();
+//    if (clk == 70) return -1;
     ++clk;
-//    if (clk == 23) return -1;
   }
 }
 
 void CPU::Flush() {
+  if (jump_pc > 0) ClearPipeline();
   rob.flush();
   reg.FlushSetX0();
   lsb.flush();
@@ -83,6 +86,8 @@ void CPU::ClearPipeline() {
   ls_rss.Clear();
   lsb.Clear();
   reg.ClearDependency();
+  ready_bus.clear();
+  commit_bus.clear();
 }
 
 /*
@@ -98,9 +103,8 @@ std::pair<u8, bool> CPU::TryCommit() {
   std::pair<int, int> tmp = rob.Commit(commit_bus, reg);
   if (tmp.first == 1) return {tmp.second, true};
   if (tmp.first == 2) {
-    pc = tmp.second;
-    pc_start = true;
-    ClearPipeline();
+    // 下个周期才更新pc，这个周期最后flush的时候才clearpipeline
+    jump_pc = tmp.second;
   }
   return {0, false};
 }
@@ -147,6 +151,12 @@ void CPU::TryIssue() {
     next_type = iu.GetInstructionType(next_code);
     pc_start = false;
   }
+  else if (jump_pc > 0) {
+    pc = jump_pc;
+    jump_pc = -1;
+    next_code = mem.FetchWordReverse(pc);
+    next_type = iu.GetInstructionType(next_code);
+  }
   else {
     int pc_checkpoint = pc;
     pc = iu.NextPc(predictor, pc);
@@ -171,9 +181,9 @@ void CPU::TryIssue() {
   InstructionUnit::Instruction next_ins = iu.DecodeSet(next_code, next_type);
   int index = rob.issue(next_ins, reg, pc);
   if ((next_ins.opt == OptType::LB || next_ins.opt == OptType::LH || next_ins.opt == OptType::LW || next_ins.opt == OptType::LBU || next_ins.opt == OptType::LHU) || next_type == InstructionType::S) {
-    ls_rss.issue(index, next_ins, reg);
+    ls_rss.issue(index, next_ins, reg, pc);
   }
   else {
-    ari_rss.issue(index, next_ins, reg);
+    ari_rss.issue(index, next_ins, reg, pc);
   }
 }

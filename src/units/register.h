@@ -50,6 +50,13 @@ public:
     }
   }
 
+  void print() const {
+    for (int i = 1; i < REGNUM; ++i) {
+      printf("[%02d]:%-8x", i, reg_now[i]);
+    }
+    std::cout << std::endl;
+  }
+
 private:
   struct RegisterEntry {
     int data = 0;

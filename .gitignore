@@ -2,3 +2,6 @@ xixi.md
 /cmake-build-debug
 .idea
 /sample
+/testcases
+tmp/
+test/
