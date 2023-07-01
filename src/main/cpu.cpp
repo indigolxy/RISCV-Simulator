@@ -3,7 +3,7 @@
 u8 CPU::run() {
   bool debug_st = false;
   while (true) {
-//    if (clk == 11062) debug_st = true;
+//    if (clk == 8210) debug_st = true;
     if (debug_st) {
       std::cout << std::endl;
       std::cout << "clock cycle " << std::dec << clk << ": pc = " << std::hex << pc << std::dec << std::endl;
@@ -55,7 +55,7 @@ u8 CPU::run() {
 
 //    std::cout << "-----------------ARI_RSS_END--------------------" << std::endl;
 //    ari_rss.print();
-//    if (clk == 7190) return -1;
+//    if (clk == 41170) return -1;
     ++clk;
   }
 }
