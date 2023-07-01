@@ -45,7 +45,7 @@ int InstructionUnit::GetImm(u32 instruction, InstructionType type) {
   if (type == InstructionType::I) {
     u8 f3 = GetFunct3(instruction);
     if (GetOpt(instruction) == 0b0010011 && (f3 == 0b001 || f3 == 0b101)) {
-      ret = (instruction & 0x1f00000) >> 20;
+      ret = (instruction & 0x3f00000) >> 20;
       return int(ret);
     }
     else {
@@ -310,6 +310,9 @@ int InstructionUnit::NextPc(Predictor &predictor, int pc) {
     return pc + 4;
   }
   else if (current_ins.opt == OptType::JALR) {
-    return predictor.JALRJump();
+    int tmp = predictor.JALRJump();
+    if (tmp != -1) return tmp;
+    stall = true;
+    return -1;
   }
 }

@@ -7,6 +7,10 @@ class Stack {
 public:
   Stack() = default;
 
+  bool empty() {
+    return sp == 0;
+  }
+
   void push(const T &src) {
     if (sp == size) {
       for (int i = 0; i < size - 1; ++i) {

@@ -3,7 +3,7 @@
 u8 CPU::run() {
   bool debug_st = false;
   while (true) {
-    if (clk == 915820) debug_st = true;
+//    if (clk == 11062) debug_st = true;
     if (debug_st) {
       std::cout << std::endl;
       std::cout << "clock cycle " << std::dec << clk << ": pc = " << std::hex << pc << std::dec << std::endl;
@@ -55,7 +55,7 @@ u8 CPU::run() {
 
 //    std::cout << "-----------------ARI_RSS_END--------------------" << std::endl;
 //    ari_rss.print();
-//    if (clk == 70) return -1;
+//    if (clk == 7190) return -1;
     ++clk;
   }
 }
@@ -112,6 +112,7 @@ void CPU::ClearPipeline() {
  *         else return {0, 0}
  */
 std::pair<u8, bool> CPU::TryCommit() {
+//  std::cout << "clk = " << clk;
   std::pair<int, int> tmp = rob.Commit(commit_bus, reg);
   if (tmp.first == 1) return {tmp.second, true};
   if (tmp.first == 2) {
@@ -156,8 +157,13 @@ void CPU::ExecuteRss() {
  */
 void CPU::TryIssue() {
   if (rob.full()) return;
+  if (jump_pc > 0) {
+    iu.stall = false;
+  }
+  if (iu.stall) return;
   u32 next_code = 0;
   InstructionType next_type;
+  int pc_checkpoint = pc;
   if (pc_start) {
     next_code = mem.FetchWordReverse(pc);
     next_type = iu.GetInstructionType(next_code);
@@ -170,8 +176,11 @@ void CPU::TryIssue() {
     next_type = iu.GetInstructionType(next_code);
   }
   else {
-    int pc_checkpoint = pc;
     pc = iu.NextPc(predictor, pc);
+    if (pc == -1) {
+      pc = pc_checkpoint;
+      return;
+    }
     next_code = mem.FetchWordReverse(pc);
     next_type = iu.GetInstructionType(next_code);
 
@@ -190,6 +199,7 @@ void CPU::TryIssue() {
   }
 
   // issue
+  if (next_code == 0x0ff00513) iu.stall = true;
   InstructionUnit::Instruction next_ins = iu.DecodeSet(next_code, next_type);
   int index = rob.issue(next_ins, reg, pc);
   if ((next_ins.opt == OptType::LB || next_ins.opt == OptType::LH || next_ins.opt == OptType::LW || next_ins.opt == OptType::LBU || next_ins.opt == OptType::LHU) || next_type == InstructionType::S) {

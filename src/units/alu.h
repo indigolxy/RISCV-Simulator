@@ -32,15 +32,15 @@ public:
     return a << shamt;
   }
   int ShiftRightLogical(int a, int shamt) const {
-    return a >> shamt;
-  }
-  int ShiftRightAri(int a, int shamt) const {
     if (a >= 0) return a >> shamt;
     u32 tmp = 0;
-    for (int i = 0; i < shamt; ++i) {
-      tmp = tmp | (1 << (31 - i));
+    for (int i = 0; i < 32 - shamt; ++i) {
+      tmp = tmp | (1 << i);
     }
-    return int(tmp) | (a >> shamt);
+    return int(tmp) & (a >> shamt);
+  }
+  int ShiftRightAri(int a, int shamt) const {
+    return a >> shamt;
   }
 };
 

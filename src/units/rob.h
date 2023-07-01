@@ -2,6 +2,8 @@
 #ifndef RISCV_SIMULATOR_ROB_H
 #define RISCV_SIMULATOR_ROB_H
 
+//#define SHOW_PC_REG
+
 #include "../utils/circular_queue.h"
 #include "instuction.h"
 #include "register.h"
@@ -121,34 +123,42 @@ public:
     // ST: put on bus, lsb will receive call and start store
     // can remove the entry immediately
     if (iter->opt == OptType::SB || iter->opt == OptType::SH || iter->opt == OptType::SW) {
+#ifdef SHOW_PC_REG
       std::cout << std::hex << "commit: pc = " << iter->pc << std::dec << std::endl;
-//      reg.print();
+      reg.print();
+#endif
 
       cdb.PutOnBus(iter->label, 0, 0); // only need label
     }
     // for AUIPC and JAL: value need to be calculated with pc
     else if (iter->opt == OptType::AUIPC || iter->opt == OptType::JAL) {
+#ifdef SHOW_PC_REG
       std::cout << std::hex << "commit: pc = " << iter->pc << std::dec << std::endl;
-//      reg.print();
+      reg.print();
+#endif
 
       cdb.PutOnBus(iter->label, iter->value, iter->rd);
     }
     // for B-type: need to check pc prediction: if false, clear pipeline; else, do nothing
     else if (iter->opt == OptType::BEQ || iter->opt == OptType::BNE || iter->opt == OptType::BLT || iter->opt == OptType::BGE || iter->opt == OptType::BLTU || iter->opt == OptType::BGEU) {
       int ans_pc = iter->pc + iter->value;
+#ifdef SHOW_PC_REG
       std::cout << std::hex << "commit: pc = " << iter->pc << std::dec << std::endl;
-//      reg.print();
+      reg.print();
+#endif
 
       ++iter;
-      if (iter->pc != ans_pc) {
+      if (iter == rob_now.end() || iter->pc != ans_pc) {
         rob_next.pop();
         return {2, ans_pc};
       }
     }
     // for JALR: put pc + 4 on bus, send to reg. check pc prediction
     else if (iter->opt == OptType::JALR) {
+#ifdef SHOW_PC_REG
       std::cout << std::hex << "commit: pc = " << iter->pc << std::dec << std::endl;
-//      reg.print();
+      reg.print();
+#endif
 
       cdb.PutOnBus(iter->label, iter->pc + 4, iter->rd);
       int ans_pc = iter->value;
@@ -159,8 +169,10 @@ public:
       }
     }
     else {
+#ifdef SHOW_PC_REG
       std::cout << std::hex << "commit: pc = " << iter->pc << std::dec << std::endl;
-//      reg.print();
+      reg.print();
+#endif
 
       cdb.PutOnBus(iter->label, iter->value, iter->rd);
     }

@@ -138,11 +138,11 @@ void LoadStoreBuffer::TryLoadStore(Memory &mem, CommonDataBus &cdb) {
     ++iter;
   }
 
-  if (iter->ready) {
-    count = 3;
+  if (iter == lsb_now.end() || !iter->ready) {
+    count = -1;
   }
   else {
-    count = -1;
+    count = 3;
   }
 }
 
@@ -156,7 +156,7 @@ void LoadStoreBuffer::Clear() {
 
   // deal with the undergoing process
   bool interrupted = false;
-  if (count > 0) {
+  if (count >= 0) {
     // LD is being done, do not push the entry into lsb_next, interrupt it
     if (iter->opt != OptType::SB && iter->opt != OptType::SH && iter->opt != OptType::SW) {
       interrupted = true;

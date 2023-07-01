@@ -19,6 +19,7 @@ public:
   }
 
   int JALRJump() {
+    if (jal_stack.empty()) return -1;
     return jal_stack.pop();
   }
 

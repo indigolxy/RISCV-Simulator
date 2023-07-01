@@ -27,6 +27,7 @@ enum class OptType {
 };
 
 class InstructionUnit {
+  friend class CPU;
 public:
   struct Instruction {
     InstructionType type;
@@ -54,6 +55,7 @@ public:
 private:
   Instruction current_ins;
   u32 current_code;
+  bool stall = false;
 
   static u8 GetOpt(u32 instruction);
   static int GetRd(u32 instruction);
