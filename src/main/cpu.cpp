@@ -1,42 +1,54 @@
 #include "cpu.h"
 
 u8 CPU::run() {
+  bool debug_st = false;
   while (true) {
-//    std::cout << std::endl;
-//    std::cout << "clock cycle " << std::dec << clk << ": pc = " << std::hex << pc << std::dec << std::endl;
+    if (clk == 915820) debug_st = true;
+    if (debug_st) {
+      std::cout << std::endl;
+      std::cout << "clock cycle " << std::dec << clk << ": pc = " << std::hex << pc << std::dec << std::endl;
+    }
 
     TryIssue();
-//    std::cout << std::endl << "ROB_AFTER_ISSUE: " << std::endl;
-//    rob.Print();
+    if (debug_st) {
+      std::cout << std::endl << "ROB_AFTER_ISSUE: " << std::endl;
+      rob.Print();
+      std::cout << std::endl << "LS_RSS_AFTER_ISSUE: " << std::endl;
+      ls_rss.print();
+    }
 //    std::cout << "-----------------ARI_RSS_AFTER_ISSUE--------------------" << std::endl;
 //    ari_rss.print();
-//    std::cout << "-----------------LS_RSS_AFTER_ISSUE--------------------" << std::endl;
-//    ls_rss.print();
 
     ExecuteRss();
+    if (debug_st) {
+      std::cout << std::endl << "LS_RSS_AFTER_EXECUTE: " << std::endl;
+      ls_rss.print();
+      std::cout << std::endl << "LSB_AFTER_EXECUTE: " << std::endl;
+      lsb.print();
+    }
 //    std::cout << "-----------------ARI_RSS_AFTER_EXECUTE--------------------" << std::endl;
 //    ari_rss.print();
-//    std::cout << "-----------------LS_RSS_AFTER_EXECUTE--------------------" << std::endl;
-//    ls_rss.print();
-//    std::cout << "-----------------LSB_AFTER_EXECUTE--------------------" << std::endl;
-//    lsb.print();
 
     AccessMem();
-//    std::cout << "-----------------LSB_AFTER_ACCESS_MEM---------------------" << std::endl;
-//    lsb.print();
+    if (debug_st) {
+      std::cout << std::endl << "LSB_AFTER_ACCESS_MEM: " << std::endl;
+      lsb.print();
+    }
 
     std::pair<u8, bool> tmp = TryCommit();
     if (tmp.second) { // commit addi x0+255->x10(a0)时，输出并退出程序
       return tmp.first;
     }
-//    std::cout << std::endl << "ROB_AFTER_COMMIT: " << std::endl;
-//    rob.Print();
-//    std::cout << "--------------READY_BUS------------" << std::endl;
-//    ready_bus.print();
-//    std::cout << "--------------COMMIT_BUS------------" << std::endl;
-//    commit_bus.print();
-//    std::cout << "-----------------REGISTER--------------" << std::endl;
-//    reg.print();
+    if (debug_st) {
+      std::cout << std::endl << "ROB_AFTER_COMMIT: " << std::endl;
+      rob.Print();
+//      std::cout << std::endl << "REGISTER: " << std::endl;
+//      reg.print();
+      std::cout << std::endl <<  "READY_BUS: " << std::endl;
+      ready_bus.print();
+      std::cout << std::endl << "COMMIT_BUS: " << std::endl;
+      commit_bus.print();
+    }
 
     CheckBus();
     Flush();

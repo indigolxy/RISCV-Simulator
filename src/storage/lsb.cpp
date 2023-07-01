@@ -102,6 +102,10 @@ void LoadStoreBuffer::TryLoadStore(Memory &mem, CommonDataBus &cdb) {
     --count;
     return;
   }
+  if (lsb_now.empty()) {
+    count = -1;
+    return; // lsb is empty, count = -1, waiting
+  }
   CircularQueue<LsbEntry, LSBSIZE>::iterator iter = lsb_now.front();
   if (count == 0) {
     if (iter->opt == OptType::SB) {
@@ -144,7 +148,10 @@ void LoadStoreBuffer::TryLoadStore(Memory &mem, CommonDataBus &cdb) {
 
 void LoadStoreBuffer::Clear() {
   lsb_next.clear();
-  if (lsb_now.empty()) return;
+  if (lsb_now.empty()) {
+    count = -1;
+    return;
+  }
   CircularQueue<LsbEntry, LSBSIZE>::iterator iter = lsb_now.front();
 
   // deal with the undergoing process
@@ -173,8 +180,8 @@ void LoadStoreBuffer::Clear() {
   }
 
   // set new counter: if the top is a ready ST, start the ST(count = 3)
-  //                  else, lsb_next is empty, count = 0;
+  //                  else, lsb_next is empty, count = -1;
   if (interrupted) {
-    (lsb_next.empty()) ? count = 0 : count = 3;
+    (lsb_next.empty()) ? count = -1 : count = 3;
   }
 }

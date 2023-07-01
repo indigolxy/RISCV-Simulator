@@ -122,13 +122,14 @@ public:
     // can remove the entry immediately
     if (iter->opt == OptType::SB || iter->opt == OptType::SH || iter->opt == OptType::SW) {
       std::cout << std::hex << "commit: pc = " << iter->pc << std::dec << std::endl;
-      reg.print();
+//      reg.print();
+
       cdb.PutOnBus(iter->label, 0, 0); // only need label
     }
     // for AUIPC and JAL: value need to be calculated with pc
     else if (iter->opt == OptType::AUIPC || iter->opt == OptType::JAL) {
       std::cout << std::hex << "commit: pc = " << iter->pc << std::dec << std::endl;
-      reg.print();
+//      reg.print();
 
       cdb.PutOnBus(iter->label, iter->value, iter->rd);
     }
@@ -136,7 +137,7 @@ public:
     else if (iter->opt == OptType::BEQ || iter->opt == OptType::BNE || iter->opt == OptType::BLT || iter->opt == OptType::BGE || iter->opt == OptType::BLTU || iter->opt == OptType::BGEU) {
       int ans_pc = iter->pc + iter->value;
       std::cout << std::hex << "commit: pc = " << iter->pc << std::dec << std::endl;
-      reg.print();
+//      reg.print();
 
       ++iter;
       if (iter->pc != ans_pc) {
@@ -147,7 +148,7 @@ public:
     // for JALR: put pc + 4 on bus, send to reg. check pc prediction
     else if (iter->opt == OptType::JALR) {
       std::cout << std::hex << "commit: pc = " << iter->pc << std::dec << std::endl;
-      reg.print();
+//      reg.print();
 
       cdb.PutOnBus(iter->label, iter->pc + 4, iter->rd);
       int ans_pc = iter->value;
@@ -159,7 +160,7 @@ public:
     }
     else {
       std::cout << std::hex << "commit: pc = " << iter->pc << std::dec << std::endl;
-      reg.print();
+//      reg.print();
 
       cdb.PutOnBus(iter->label, iter->value, iter->rd);
     }
