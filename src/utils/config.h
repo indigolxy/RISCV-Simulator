@@ -10,6 +10,6 @@ constexpr int MEMSIZE = 2e6;
 constexpr int ROBSIZE = 32;
 constexpr int RSSSIZE = 32;
 constexpr int REGNUM = 32;
-constexpr int LSBSIZE = 20000;
+constexpr int LSBSIZE = 32;
 constexpr int CDBSIZE = 4;
 constexpr int PREDICT_STACK_SIZE = 12;

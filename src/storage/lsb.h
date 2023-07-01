@@ -75,6 +75,8 @@ public:
   // * for unready STs: set ready
   void CheckBus(const CommonDataBus &cdb);
 
+  bool NextFull() {return lsb_next.full();}
+
 private:
   CircularQueue<LsbEntry, LSBSIZE> lsb_now;
   CircularQueue<LsbEntry, LSBSIZE> lsb_next;

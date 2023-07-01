@@ -151,6 +151,7 @@ void ReservationStation::AriExecute(const ArithmeticLogicUnit &alu, CommonDataBu
 }
 
 void ReservationStation::LsExecute(const ArithmeticLogicUnit &alu, CommonDataBus &cdb, LoadStoreBuffer &lsb) {
+  if (lsb.NextFull()) return;
   if (size_now == 0) return;
   int addr = 0;
   // ST at top prepared?

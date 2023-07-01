@@ -27,7 +27,6 @@ void LoadStoreBuffer::CheckBus(const CommonDataBus &cdb) {
 
 void LoadStoreBuffer::Execute(OptType opt, int addr, int value, int label, CommonDataBus &cdb)  {
   if (opt == OptType::SB || opt == OptType::SH || opt == OptType::SW) {
-    if (lsb_next.full()) throw std::exception();
     int tmp = lsb_next.push({-1, false, opt, addr, value, label}); // ST: not ready
     lsb_next.back()->cnt = tmp;
     cdb.PutOnBus(label, value);
@@ -94,7 +93,6 @@ void LoadStoreBuffer::Execute(OptType opt, int addr, int value, int label, Commo
     }
   }
 
-  if (lsb_next.full()) throw std::exception();
   int tmp = lsb_next.push({-1, true, opt, addr, value, label}); // LD: ready
   lsb_next.back()->cnt = tmp;
 }
