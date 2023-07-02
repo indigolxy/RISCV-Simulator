@@ -2,43 +2,42 @@
 
 u8 CPU::run() {
   bool debug_st = false;
+  void (CPU::*func[4])() = {&CPU::TryIssue, &CPU::ExecuteRss, &CPU::AccessMem, &CPU::TryCommit};
   while (true) {
-//    if (clk == 8210) debug_st = true;
+    std::shuffle(func, func + 4, std::mt19937(std::random_device()()));
+//    if (clk == 1368) debug_st = true;
     if (debug_st) {
       std::cout << std::endl;
       std::cout << "clock cycle " << std::dec << clk << ": pc = " << std::hex << pc << std::dec << std::endl;
     }
 
-    TryIssue();
+    (this->*func[0])();
     if (debug_st) {
       std::cout << std::endl << "ROB_AFTER_ISSUE: " << std::endl;
       rob.Print();
       std::cout << std::endl << "LS_RSS_AFTER_ISSUE: " << std::endl;
       ls_rss.print();
+      std::cout << "-----------------ARI_RSS_AFTER_ISSUE--------------------" << std::endl;
+      ari_rss.print();
     }
-//    std::cout << "-----------------ARI_RSS_AFTER_ISSUE--------------------" << std::endl;
-//    ari_rss.print();
 
-    ExecuteRss();
+    (this->*func[1])();
     if (debug_st) {
       std::cout << std::endl << "LS_RSS_AFTER_EXECUTE: " << std::endl;
       ls_rss.print();
       std::cout << std::endl << "LSB_AFTER_EXECUTE: " << std::endl;
       lsb.print();
+      std::cout << "-----------------ARI_RSS_AFTER_EXECUTE--------------------" << std::endl;
+      ari_rss.print();
     }
-//    std::cout << "-----------------ARI_RSS_AFTER_EXECUTE--------------------" << std::endl;
-//    ari_rss.print();
 
-    AccessMem();
+    (this->*func[2])();
     if (debug_st) {
       std::cout << std::endl << "LSB_AFTER_ACCESS_MEM: " << std::endl;
       lsb.print();
     }
 
-    std::pair<u8, bool> tmp = TryCommit();
-    if (tmp.second) { // commit addi x0+255->x10(a0)时，输出并退出程序
-      return tmp.first;
-    }
+    (this->*func[3])();
     if (debug_st) {
       std::cout << std::endl << "ROB_AFTER_COMMIT: " << std::endl;
       rob.Print();
@@ -53,15 +52,25 @@ u8 CPU::run() {
     CheckBus();
     Flush();
 
+    if (end_flag) {
+      return ret_value;
+    }
+
 //    std::cout << "-----------------ARI_RSS_END--------------------" << std::endl;
 //    ari_rss.print();
-//    if (clk == 41170) return -1;
+//    if (clk == 1374) return -1;
     ++clk;
   }
 }
 
 void CPU::Flush() {
-  if (jump_pc > 0) ClearPipeline();
+  if (jump_pc > 0) {
+    ClearPipeline();
+    pc = jump_pc;
+    jump_pc = -1;
+    pc_start = true;
+    iu.stall = false;
+  }
   rob.flush();
   reg.FlushSetX0();
   lsb.flush();
@@ -107,19 +116,20 @@ void CPU::ClearPipeline() {
  *                            else return
  * handle .END, jalr and branch prediction
  *
- * Commit: .END: return {1, a0}
- *         prediction failed: return {2, correct_pc}
- *         else return {0, 0}
+ * Commit: .END: set end_flag and ret_value
+ *         prediction failed: set jump_pc
  */
-std::pair<u8, bool> CPU::TryCommit() {
-//  std::cout << "clk = " << clk;
-  std::pair<int, int> tmp = rob.Commit(commit_bus, reg);
-  if (tmp.first == 1) return {tmp.second, true};
+void CPU::TryCommit() {
+  if (clk % 100000 == 0) std::cout << "clk = " << clk << std::endl;
+  std::pair<int, int> tmp = rob.Commit(commit_bus, reg, predictor);
+  if (tmp.first == 1) {
+    end_flag = true;
+    ret_value = tmp.second;
+  }
   if (tmp.first == 2) {
     // 下个周期才更新pc，这个周期最后flush的时候才clearpipeline
     jump_pc = tmp.second;
   }
-  return {0, false};
 }
 
 /*
@@ -157,23 +167,17 @@ void CPU::ExecuteRss() {
  */
 void CPU::TryIssue() {
   if (rob.full()) return;
-  if (jump_pc > 0) {
-    iu.stall = false;
-  }
+//  if (jump_pc > 0) {
+//    iu.stall = false;
+//  }
   if (iu.stall) return;
   u32 next_code = 0;
   InstructionType next_type;
   int pc_checkpoint = pc;
   if (pc_start) {
-    next_code = mem.FetchWordReverse(pc);
+    next_code = mem.LoadWord(pc);
     next_type = iu.GetInstructionType(next_code);
     pc_start = false;
-  }
-  else if (jump_pc > 0) {
-    pc = jump_pc;
-    jump_pc = -1;
-    next_code = mem.FetchWordReverse(pc);
-    next_type = iu.GetInstructionType(next_code);
   }
   else {
     pc = iu.NextPc(predictor, pc);
@@ -181,7 +185,7 @@ void CPU::TryIssue() {
       pc = pc_checkpoint;
       return;
     }
-    next_code = mem.FetchWordReverse(pc);
+    next_code = mem.LoadWord(pc);
     next_type = iu.GetInstructionType(next_code);
 
     if (next_type == InstructionType::I || next_type == InstructionType::S) {

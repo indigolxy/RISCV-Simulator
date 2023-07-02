@@ -110,7 +110,7 @@ public:
    *  prediction failed: return {2, correct_pc}
    *  else return {0, 0}
    */
-  std::pair<int, int> Commit(CommonDataBus &cdb, const Register &reg) {
+  std::pair<int, int> Commit(CommonDataBus &cdb, const Register &reg, Predictor &predictor) {
     if (rob_now.empty()) return {0, 0};
     CircularQueue<RoBEntry, ROBSIZE>::iterator iter = rob_now.front();
     if (!iter->ready) return {0, false}; // nothing to commit
@@ -142,6 +142,8 @@ public:
     // for B-type: need to check pc prediction: if false, clear pipeline; else, do nothing
     else if (iter->opt == OptType::BEQ || iter->opt == OptType::BNE || iter->opt == OptType::BLT || iter->opt == OptType::BGE || iter->opt == OptType::BLTU || iter->opt == OptType::BGEU) {
       int ans_pc = iter->pc + iter->value;
+      if (iter->value == 4) predictor.SetJump(iter->pc, false);
+      else predictor.SetJump(iter->pc, true);
 #ifdef SHOW_PC_REG
       std::cout << std::hex << "commit: pc = " << iter->pc << std::dec << std::endl;
       reg.print();
@@ -163,7 +165,7 @@ public:
       cdb.PutOnBus(iter->label, iter->pc + 4, iter->rd);
       int ans_pc = iter->value;
       ++iter;
-      if (iter->pc != ans_pc) {
+      if (iter == rob_now.end() || iter->pc != ans_pc) {
         rob_next.pop();
         return {2, ans_pc};
       }

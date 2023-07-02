@@ -13,3 +13,4 @@ constexpr int REGNUM = 32;
 constexpr int LSBSIZE = 32;
 constexpr int CDBSIZE = 4;
 constexpr int PREDICT_STACK_SIZE = 12;
+constexpr int PREDICT_COUNTER_NUM = 1024;

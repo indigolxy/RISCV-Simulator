@@ -110,21 +110,6 @@ public:
     return ret;
   }
 
-  /*
-   * start from addr
-   * fetch 4 continuous bytes and put together reversely
-   */
-  u32 FetchWordReverse(int addr) {
-    u32 tmp = 0;
-    u32 ret = 0;
-    for (int i = 0; i < 4; ++i) {
-      tmp = u32(units[addr + i]);
-      tmp = tmp << (i * 8);
-      ret = ret | tmp;
-    }
-    return ret;
-  }
-
 private:
   u8 units[MEMSIZE];
 };

@@ -2,6 +2,8 @@
 #ifndef RISCV_SIMULATOR_CPU_H
 #define RISCV_SIMULATOR_CPU_H
 
+#include <algorithm>
+#include <random>
 #include "../units/rob.h"
 #include "../storage/memory.h"
 #include "../units/rss.h"
@@ -30,6 +32,8 @@ private:
   bool pc_start = true;
   int jump_pc = -1;
   int clk = 0;
+  bool end_flag = false;
+  u8 ret_value = 0;
 
   void ClearPipeline();
 
@@ -39,7 +43,7 @@ private:
 
   void AccessMem();
 
-  std::pair<u8, bool> TryCommit();
+  void TryCommit();
 
   void CheckBus();
 
