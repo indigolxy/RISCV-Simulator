@@ -120,7 +120,7 @@ void CPU::ClearPipeline() {
  *         prediction failed: set jump_pc
  */
 void CPU::TryCommit() {
-  if (clk % 100000 == 0) std::cout << "clk = " << clk << std::endl;
+//  if (clk % 100000 == 0) std::cout << "clk = " << clk << std::endl;
   std::pair<int, int> tmp = rob.Commit(commit_bus, reg, predictor);
   if (tmp.first == 1) {
     end_flag = true;
